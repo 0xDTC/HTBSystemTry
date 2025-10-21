@@ -1,0 +1,297 @@
+╔══════════════════════════════════════════════════════════════════╗
+║  HTB TOOL - SYSTEM TRAY MENU STRUCTURE                          ║
+╚══════════════════════════════════════════════════════════════════╝
+
+This is exactly how the HTB Tool menu appears when you click the
+system tray icon:
+
+┌─────────────────────────────────────────────────────────┐
+│ [HTB]  ← System Tray Icon (appears near wifi/volume)   │
+└─────────────────────────────────────────────────────────┘
+         │
+         │ (Click icon to open dropdown)
+         ▼
+┌─────────────────────────────────────────────────────────┐
+│  👤 User Info                                           │
+├─────────────────────────────────────────────────────────┤
+│  🔑 API Key                                              │
+├─────────────────────────────────────────────────────────┤
+│  🔐 VPN                                              ▶   │───┐
+├─────────────────────────────────────────────────────────┤   │
+│  🖥️  Machines                                        ▶   │───┤
+├─────────────────────────────────────────────────────────┤   │
+│  🎯 Challenges                                       ▶   │───┤
+├─────────────────────────────────────────────────────────┤   │
+│  🔄 Refresh All                                          │   │
+├─────────────────────────────────────────────────────────┤   │
+│  ❌ Quit                                                 │   │
+└─────────────────────────────────────────────────────────┘   │
+                                                               │
+═══════════════════════════════════════════════════════════════╪═══
+
+VPN SUBMENU (hover over "🔐 VPN")                             │
+                                                               │
+┌──────────────────────────────────────────────────┐ ◀────────┘
+│  🟢 US Free 1 (45 clients)                   ▶   │───┐
+├──────────────────────────────────────────────────┤   │
+│  🟢 US Free 2 (32 clients)                   ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  🟡 US VIP 1 (78 clients)                    ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  🟡 US VIP 2 (65 clients)                    ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  🔴 EU Free 1 (124 clients)                  ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  🟢 EU VIP 1 (38 clients)                    ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  🟢 AU Free 1 (21 clients)                   ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  🟢 SG Free 1 (19 clients)                   ▶   │   │
+├──────────────────────────────────────────────────┤   │
+│  ... (more servers)                              │   │
+├──────────────────────────────────────────────────┤   │
+│  ───────────────────────────────────             │   │
+├──────────────────────────────────────────────────┤   │
+│  📥 Download All (TCP)                            │   │
+├──────────────────────────────────────────────────┤   │
+│  📥 Download All (UDP)                            │   │
+└──────────────────────────────────────────────────┘   │
+                                                        │
+        VPN PROTOCOL SUBMENU (hover over a server)     │
+                                                        │
+        ┌──────────────────────────────┐ ◀─────────────┘
+        │  📥 Download TCP              │
+        ├──────────────────────────────┤
+        │  📥 Download UDP              │
+        └──────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+
+MACHINES SUBMENU (hover over "🖥️  Machines")
+
+┌──────────────────────────────────────────────────┐
+│  🟢 Active Machines                          ▶   │───┐
+├──────────────────────────────────────────────────┤   │
+│  🔴 Retired Machines                         ▶   │   │
+└──────────────────────────────────────────────────┘   │
+                                                        │
+        ACTIVE MACHINES SUBMENU                         │
+                                                        │
+        ┌──────────────────────────────────┐ ◀─────────┘
+        │  📊 125 Active machines          │ (disabled)
+        ├──────────────────────────────────┤
+        │  ──────────────────────           │
+        ├──────────────────────────────────┤
+        │  🟢 🐧 Keeper                 ▶   │───┐
+        ├──────────────────────────────────┤   │
+        │  🟡 🪟 Manager                ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🟡 🐧 Neonify               ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🟠 🐧 Editorial              ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🟠 🪟 Cicada                ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🔴 🐧 Sightless             ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🟢 🪟 Bizness               ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  ... (20 total shown)            │   │
+        ├──────────────────────────────────┤   │
+        │  ... and 105 more                │   │
+        └──────────────────────────────────┘   │
+                                                │
+                MACHINE ACTIONS SUBMENU         │
+                (hover over a machine)          │
+                                                │
+                ┌────────────────────┐ ◀────────┘
+                │  ℹ️  Info           │
+                ├────────────────────┤
+                │  ▶️  Spawn          │
+                ├────────────────────┤
+                │  ──────────         │
+                ├────────────────────┤
+                │  🚩 Submit Flag    │
+                └────────────────────┘
+
+        For SPAWNED machines, menu shows:
+                ┌────────────────────┐
+                │  ℹ️  Info           │
+                ├────────────────────┤
+                │  ⏹️  Stop           │
+                ├────────────────────┤
+                │  🔄 Reset          │
+                ├────────────────────┤
+                │  ──────────         │
+                ├────────────────────┤
+                │  🚩 Submit Flag    │
+                └────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+
+CHALLENGES SUBMENU (hover over "🎯 Challenges")
+
+┌──────────────────────────────────────────────────┐
+│  🟢 Active Challenges                        ▶   │───┐
+├──────────────────────────────────────────────────┤   │
+│  🔴 Retired Challenges                       ▶   │   │
+└──────────────────────────────────────────────────┘   │
+                                                        │
+        ACTIVE CHALLENGES SUBMENU                       │
+        (Grouped by category)                           │
+                                                        │
+        ┌──────────────────────────────────┐ ◀─────────┘
+        │  📊 45 Active challenges         │ (disabled)
+        ├──────────────────────────────────┤
+        │  ──────────────────────           │
+        ├──────────────────────────────────┤
+        │  🌐 Web (12)                  ▶   │───┐
+        ├──────────────────────────────────┤   │
+        │  🔐 Crypto (8)                ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  💥 Pwn (10)                  ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🔄 Reversing (5)             ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🔍 Forensics (6)             ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🕵️  OSINT (2)                ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  📱 Mobile (1)                ▶   │   │
+        ├──────────────────────────────────┤   │
+        │  🎲 Misc (1)                  ▶   │   │
+        └──────────────────────────────────┘   │
+                                                │
+                WEB CATEGORY SUBMENU            │
+                (hover over "🌐 Web")           │
+                                                │
+                ┌──────────────────────────┐ ◀──┘
+                │  ⚪ 🟢 Flag Command   ▶   │───┐
+                ├──────────────────────────┤   │
+                │  ✅ 🟢 Templated      ▶   │   │
+                ├──────────────────────────┤   │
+                │  ⚪ 🟡 LockTalk       ▶   │   │
+                ├──────────────────────────┤   │
+                │  ⚪ 🟠 Jscalc         ▶   │   │
+                ├──────────────────────────┤   │
+                │  ✅ 🔴 ApacheBlaze   ▶   │   │
+                ├──────────────────────────┤   │
+                │  ... (10 total shown)    │   │
+                ├──────────────────────────┤   │
+                │  ... and 2 more          │   │
+                └──────────────────────────┘   │
+                                                │
+                    CHALLENGE ACTIONS           │
+                    (hover over challenge)      │
+                                                │
+                    ┌──────────────┐ ◀──────────┘
+                    │  ℹ️  Info     │
+                    ├──────────────┤
+                    │  🚩 Submit  │
+                    └──────────────┘
+
+═══════════════════════════════════════════════════════════════════
+
+LEGEND:
+
+Status Indicators:
+  🟢  Active/Online/Low Load
+  🟡  Medium Load
+  🔴  Retired/High Load
+  ✅  Solved/Completed
+  ⚪  Not Solved
+
+Difficulty:
+  🟢  Easy
+  🟡  Medium
+  🟠  Hard
+  🔴  Insane
+
+Operating Systems:
+  🐧  Linux
+  🪟  Windows
+  😈  FreeBSD
+  💻  Other
+
+Challenge Categories:
+  🌐  Web
+  🔐  Crypto
+  💥  Pwn
+  🔄  Reversing
+  🔍  Forensics
+  🕵️   OSINT
+  📱  Mobile
+  🔧  Hardware
+  🎲  Misc
+
+Actions:
+  ℹ️   View Information
+  ▶️   Spawn/Start
+  ⏹️   Stop/Terminate
+  🔄  Reset
+  🚩  Submit Flag
+  📥  Download
+  🔑  API Key
+  👤  User Info
+
+═══════════════════════════════════════════════════════════════════
+
+INTERACTIONS:
+
+1. Click tray icon → Main menu opens
+2. Hover over item with ▶ → Submenu expands
+3. Click item → Action executes
+4. Click outside menu → Menu closes
+
+NOTIFICATIONS:
+
+All actions trigger desktop notifications:
+  • Spawning machine: "Manager is spawning! Ready in ~2-3 min"
+  • VPN download: "Downloaded US VIP 1 to ~/Downloads/htb-vpn/"
+  • Flag submit: "🎉 Correct Root flag! +40 points"
+  • Errors: "❌ Failed to spawn: Machine already active"
+
+FLAG SUBMISSION FLOW:
+
+1. Click: 🚩 Submit Flag
+2. Dialog appears (zenity): "Enter flag for Keeper:"
+3. Type flag: HTB{...}
+4. Another dialog: "Select flag type:"
+   - User Flag
+   - Root Flag
+5. Click selection
+6. Notification: "✓ Correct User flag!" or "✗ Incorrect"
+
+═══════════════════════════════════════════════════════════════════
+
+TYPICAL WORKFLOW:
+
+Morning Routine:
+  1. Login to Kali
+  2. HTB Tool auto-starts (tray icon appears)
+  3. Click icon
+  4. VPN → US Free 1 → Download TCP
+  5. Terminal: sudo openvpn ~/Downloads/htb-vpn/htb_vpn_123_tcp.ovpn
+  6. Machines → Active → Keeper → Spawn
+  7. Wait notification: "Keeper is spawned!"
+  8. Start hacking!
+
+After Pwn:
+  1. Click tray icon
+  2. Machines → Active → Keeper
+  3. Submit Flag
+  4. Enter: HTB{user_flag_here}
+  5. Select: User Flag
+  6. Notification: "🎉 Correct!"
+  7. Continue to root...
+  8. Submit Flag → Enter root flag
+  9. Select: Root Flag
+  10. Notification: "🎉 Correct!"
+  11. Keeper → Stop
+
+═══════════════════════════════════════════════════════════════════
+
+This is a LIGHTWEIGHT, MENU-DRIVEN system tray app - no windows,
+no clutter, just quick access from your panel!
+
+Like having HTB in your pocket, always ready! 🚀
