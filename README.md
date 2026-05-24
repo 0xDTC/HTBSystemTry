@@ -1,258 +1,102 @@
-# HTB Tool
+# HTB Tray
 
-A powerful desktop application for managing your HackTheBox machines, challenges, and VPN connections.
+A fast, native Linux system-tray client for Hack The Box. Browse and control machines, challenges, sherlocks, and VPN servers from a tray menu, without opening a browser.
+
+Built with the Go standard library plus a single tray dependency (`getlantern/systray`). No web view, no Electron, no heavy GUI toolkit. The binary is about 10 MB.
+
+![HTB Tray menu](docs/images/menu.png)
 
 ## Features
 
-### 🖥️ Machine Management
-- **Browse all machines** (Active & Retired)
-- **Search & filter** by difficulty, OS, status
-- **Spawn/Terminate** machines with one click
-- **Submit flags** directly from the app (User & Root)
-- View detailed machine information (OS, difficulty, rating, owns, IP)
-- Color-coded difficulty indicators
-- Real-time status updates
+- **Machines**: active and retired lists with difficulty, OS, and owned markers; spawn, stop, reset; submit user/root flags from the clipboard. The status line at the top shows the spawned machine and its IP (for example `Reactor · 10.129.x.x`); click it to copy the IP.
+- **Challenges**: active and retired, with difficulty, category, points, and solved markers; submit flags from the clipboard.
+- **Sherlocks**: browse, view info, and play. "Download" creates `~/Downloads/<sherlock name>/` and saves the artifact archive, the logo image, and an `info.txt`.
+- **VPN**: servers grouped by product (Machines, Competitive, Starting Point, Fortresses) and region, each showing live client load; download TCP or UDP configs; switch server; the assigned server is marked.
+- **Search**: copy a query, click Search, get matching machines, challenges, sherlocks, users, and teams.
+- **Instant refresh**: menus are built once and updated in place (no process restart). Data loads in the background and is cached on disk, so the menu appears immediately on launch.
+- **Lean integration**: desktop notifications via `notify-send` and clipboard input via `xclip`, so no extra dialog dependency is required. API requests are paced and retried so refreshing never trips HTB rate limits.
 
-### 🎯 Challenge Browser
-- Browse all HTB challenges
-- Filter by category (Web, Crypto, Pwn, Forensics, etc.)
-- Search by name
-- Submit flags directly
-- View points, solves, and ratings
-- Track completed challenges
+## Menu structure
 
-### 🔐 VPN Management
-- **List all VPN servers** with current load
-- **Download multiple VPN configs** at once
-- Choose between **TCP/UDP** protocols
-- Select from any region/server
-- Batch download with progress tracking
-
-### ⚙️ Additional Features
-- **System tray integration** - Minimize to tray like Flameshot
-- **Quick access menu** from tray icon
-- Persistent configuration
-- Clean, modern UI with Fyne toolkit
-- Cross-platform support (Linux, Windows, macOS)
-
-## Installation
-
-### Prerequisites
-```bash
-# Install Go (if not already installed)
-# On Kali Linux:
-sudo apt update
-sudo apt install golang-go
-
-# Install Fyne dependencies
-sudo apt install libgl1-mesa-dev xorg-dev
+```
+HTB (tray icon)
+- Status: active machine and IP (click to copy)
+- Machines
+  - Active:  Info, Spawn, Stop, Reset, Submit Flag (clipboard)
+  - Retired
+- Challenges
+  - Active:  Info, Submit Flag (clipboard)
+  - Retired
+- Sherlocks: Info, Play, Download (files + logo + info)
+- VPN
+  - Product (Machines / Competitive / Starting Point / Fortresses)
+    - Region (EU / US / AU / SG)
+      - Server: Download TCP, Download UDP, Switch
+- Search (clipboard)
+- Set API Token (clipboard)
+- Refresh
+- Quit
 ```
 
-### Build & Install
-```bash
-cd /media/kali/3315E7784CD31C71/Scripts/htb-tool
+## Requirements
 
-# Download dependencies
-go mod tidy
+- Linux with a system tray host (StatusNotifier): XFCE, KDE, GNOME with an AppIndicator extension, etc.
+- Runtime tools: `notify-send` (libnotify) for notifications, `xclip` for clipboard access.
+- To build: Go 1.24 or newer.
 
-# Build the application
-go build -o htb-tool ./cmd
+## Install
 
-# Make it executable
-chmod +x htb-tool
-
-# Optional: Move to PATH
-sudo mv htb-tool /usr/local/bin/
+```sh
+git clone <repo-url> HTBSystemTry
+cd HTBSystemTry
+go build -o ~/.local/bin/htb-tray ./cmd
+~/.local/bin/htb-tray
 ```
 
-### Create Desktop Entry (for system tray icon)
-```bash
-cat > ~/.local/share/applications/htb-tool.desktop <<'EOF'
+## Autostart on login
+
+An XDG autostart entry launches the tray automatically after login (it runs inside the graphical session, so it gets the display and D-Bus it needs):
+
+`~/.config/autostart/htb-tray.desktop`
+
+```ini
 [Desktop Entry]
-Name=HTB Tool
-Comment=HackTheBox Management Tool
-Exec=/usr/local/bin/htb-tool
-Icon=network-vpn
-Terminal=false
 Type=Application
+Name=HTB Tray
+Comment=Hack The Box system tray (machines, challenges, sherlocks, VPN)
+Exec=/home/<user>/.local/bin/htb-tray
+Terminal=false
+X-GNOME-Autostart-enabled=true
 Categories=Network;Security;
-StartupNotify=true
-EOF
-
-# Update desktop database
-update-desktop-database ~/.local/share/applications/
 ```
+
+To disable autostart, delete that file or untick it in your desktop's startup settings (for example XFCE: Settings, Session and Startup, Application Autostart).
 
 ## Configuration
 
-### Getting Your HTB API Token
-1. Go to https://www.hackthebox.com/home/settings
-2. Scroll to "Create App Token"
-3. Generate a new token
-4. Copy and paste it into HTB Tool on first launch
+Provide your HTB API token (from your HTB profile settings, App Tokens) in any one of these ways:
 
-### Configuration File
-Location: `~/.config/htb-tool/config.json`
+1. Click "Set API Token (clipboard)" in the tray after copying the token.
+2. Set `HTB_TOKEN` in the environment.
+3. Put it in `~/.config/htb-tool/config.json`:
 
 ```json
-{
-  "api_token": "your_htb_api_token_here",
-  "vpn_directory": "/home/user/Downloads/htb-vpn",
-  "last_protocol": "tcp",
-  "window_width": 1200,
-  "window_height": 800
-}
+{ "api_token": "your-token", "vpn_directory": "/home/<user>/Downloads/htb-vpn" }
 ```
 
-## Usage
+VPN configs save to `~/Downloads/htb-vpn` by default.
 
-### Launch the Application
-```bash
-htb-tool
-```
+## Usage notes
 
-### First Run Setup
-1. Enter your HTB API token
-2. Click "Save & Continue"
-3. Start managing your HTB instances!
+- **Submitting flags**: copy the flag to the clipboard, then click "Submit Flag (clipboard)" on the machine or challenge.
+- **VPN downloads**: HTB only allows downloading the config for the server you are assigned to. For a different server, click "Switch to this server" first, then download.
+- **VPN latency**: per-server ping is intentionally not shown. HTB does not expose pingable hostnames for arbitrary servers, so (like the HTB web platform) only client load is displayed.
+- **Pro Labs VPN**: not yet listed; Pro Labs use a separate per-prolab endpoint.
+- **Active machine IP**: shown in the menu status line and in the tray icon's tooltip (hover). It is also set as the icon label, which appears next to the icon on desktops that render labels (GNOME, KDE). XFCE's tray ignores icon labels (and scales icons to a square), so on XFCE read the IP from the tooltip or the menu.
 
-### Machine Management
-1. Go to **Machines** tab
-2. Use the search bar to find machines
-3. Filter by difficulty, OS, or status
-4. Click **Spawn** to start a machine
-5. Click **Info** to see details and submit flags
-6. Click **Stop** to terminate
+## Architecture
 
-### Submit Flags
-1. Click **Info** on any spawned machine
-2. Enter your flag in the text field
-3. Click **Submit User Flag** or **Submit Root Flag**
-4. Get instant feedback on correctness
-
-### Download VPN Configs
-1. Go to **VPN** tab
-2. Select servers (use Select All for all regions)
-3. Choose protocol (TCP/UDP)
-4. Click **Download Selected VPNs**
-5. Files saved to configured directory
-
-### System Tray
-- Click the tray icon to show/hide window
-- Right-click for quick menu
-- "Refresh Machines" to update list
-- "Quit" to exit application
-
-## Screenshots
-
-```
-┌─────────────────────────────────────────────────────┐
-│ HTB Tool                                      [_][□][X]│
-├─────────────────────────────────────────────────────┤
-│ Machines | Challenges | VPN | Settings             │
-├─────────────────────────────────────────────────────┤
-│ Search: [_____________]  Filter: [All ▼]  [Refresh] │
-├─────────────────────────────────────────────────────┤
-│ 🟢 🟢 🐧 Keeper - Easy          [Info] [Spawn]      │
-│ 🟢 🟡 🪟 Manager - Medium       [Info] [Stop]       │
-│ 🔴 🟠 🐧 Neonify - Hard         [Info] [Spawn]      │
-│ 🔴 🔴 🪟 Sightless - Insane     [Info] [Spawn]      │
-├─────────────────────────────────────────────────────┤
-│ Status: Loaded 500 machines                         │
-└─────────────────────────────────────────────────────┘
-```
-
-## Keyboard Shortcuts
-
-- `Ctrl+R` - Refresh current view
-- `Ctrl+F` - Focus search bar
-- `Ctrl+Q` - Quit application
-- `Ctrl+,` - Open settings
-
-## Troubleshooting
-
-### "API token invalid" error
-- Check your token at https://www.hackthebox.com/home/settings
-- Make sure you copied the full token
-- Generate a new token if needed
-
-### "Failed to load machines" error
-- Check your internet connection
-- Verify HTB API is accessible
-- Check if you have an active HTB subscription
-
-### VPN download fails
-- Ensure you have an active VIP/VIP+ subscription
-- Check write permissions on download directory
-- Verify server is online
-
-### System tray icon not showing
-- Make sure your desktop environment supports system tray
-- Try restarting the application
-- Check if other tray apps work (like Flameshot)
-
-## Development
-
-### Project Structure
-```
-htb-tool/
-├── cmd/
-│   └── main.go              # Entry point
-├── internal/
-│   ├── api/
-│   │   └── client.go        # HTB API client
-│   ├── config/
-│   │   └── config.go        # Configuration management
-│   └── ui/
-│       ├── app.go           # Main application
-│       ├── machines.go      # Machine browser
-│       ├── challenges.go    # Challenge browser
-│       ├── vpn.go           # VPN downloader
-│       └── settings.go      # Settings page
-├── go.mod
-└── README.md
-```
-
-### Building from Source
-```bash
-# Clone and build
-git clone <repo>
-cd htb-tool
-go mod tidy
-go build -o htb-tool ./cmd
-```
-
-### Running in Development
-```bash
-go run ./cmd/main.go
-```
-
-## Dependencies
-
-- [Fyne](https://fyne.io/) - Modern GUI toolkit
-- HTB API v4
-
-## License
-
-MIT License
-
-## Contributing
-
-Pull requests are welcome! For major changes, please open an issue first.
-
-## Roadmap
-
-- [ ] Machine auto-reset before expiry
-- [ ] Notification for new machines/challenges
-- [ ] Challenge file downloads
-- [ ] HTB Battlegrounds support
-- [ ] Track time spent on machines
-- [ ] Export statistics/progress
-
-## Author
-
-Created for HackTheBox enthusiasts who want a native desktop experience.
-
-## Disclaimer
-
-This tool is for educational purposes. Use responsibly and in accordance with HackTheBox's Terms of Service.
+- `internal/api`: standard-library HTB API client (v4 and v5) with request pacing and rate-limit retry.
+- `internal/cache`: generic, disk-persisted TTL cache for stale-while-revalidate loading.
+- `internal/tray`: the systray menu, pre-allocated and updated in place.
+- `cmd`: entry point.

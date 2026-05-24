@@ -8,12 +8,12 @@ import (
 )
 
 type Config struct {
-	APIToken      string `json:"api_token"`
-	VPNDirectory  string `json:"vpn_directory"`
-	LastServerID  int    `json:"last_server_id"`
-	LastProtocol  string `json:"last_protocol"`
-	WindowWidth   int    `json:"window_width"`
-	WindowHeight  int    `json:"window_height"`
+	APIToken     string `json:"api_token"`
+	VPNDirectory string `json:"vpn_directory"`
+	LastServerID int    `json:"last_server_id"`
+	LastProtocol string `json:"last_protocol"`
+	WindowWidth  int    `json:"window_width"`
+	WindowHeight int    `json:"window_height"`
 }
 
 var configPath string
