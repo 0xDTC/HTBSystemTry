@@ -4,7 +4,7 @@ A fast, native Linux system-tray client for Hack The Box. Browse and control mac
 
 Built with the Go standard library plus a single tray dependency (`getlantern/systray`). No web view, no Electron, no heavy GUI toolkit. The binary is about 10 MB.
 
-![HTB Tray menu](docs/images/menu.png)
+<img width="270" height="304" alt="image" src="https://github.com/user-attachments/assets/55c706e3-ac46-4a0c-aadc-e12dc9c540e6" />
 
 ## Features
 
