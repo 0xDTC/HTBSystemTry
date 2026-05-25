@@ -138,9 +138,10 @@ func (c *Client) GetSherlock(id int) (*Sherlock, error) {
 	}, nil
 }
 
-// PlaySherlock starts (or continues) the given Sherlock for the caller.
+// PlaySherlock starts (or continues) the given Sherlock for the caller. The
+// endpoint is GET (operationId getSherlockPlay); a POST returns HTTP 405.
 func (c *Client) PlaySherlock(id int) error {
-	return c.sendJSON(http.MethodPost, "v4", fmt.Sprintf("/sherlocks/%d/play", id), nil, nil)
+	return c.getJSON("v4", fmt.Sprintf("/sherlocks/%d/play", id), nil, nil)
 }
 
 // SherlockTasks returns the ordered list of tasks for a Sherlock.

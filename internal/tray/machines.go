@@ -1,6 +1,7 @@
 package tray
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -189,11 +190,31 @@ func (t *TrayApp) machineInfo(m api.Machine) {
 	notify("🖥️ "+m.Name, msg)
 }
 
+// isServerErr reports whether err is an HTB API 5xx (server-side) error.
+func isServerErr(err error) bool {
+	var ae *api.APIError
+	return errors.As(err, &ae) && ae.Status >= 500
+}
+
 func (t *TrayApp) machineSpawn(m api.Machine) {
 	notify("Spawning", m.Name+"…")
-	if err := t.client.SpawnMachine(m.ID); err != nil {
-		notifyErr("Spawn failed", truncate(err.Error(), 120))
-		return
+	err := t.client.SpawnMachine(m.ID)
+	if err != nil {
+		// HTB runs one machine at a time on the dedicated instance. If another
+		// machine is already active, that is the cause; say so plainly.
+		if active, aerr := t.client.ActiveMachine(); aerr == nil && active != nil && active.ID != m.ID {
+			notifyErr("Spawn failed", fmt.Sprintf("%s is already running. Stop it first, then spawn %s.", active.Name, m.Name))
+			return
+		}
+		// Otherwise HTB likely returned a transient 5xx ("please try again").
+		for attempt := 0; err != nil && isServerErr(err) && attempt < 2; attempt++ {
+			time.Sleep(2 * time.Second)
+			err = t.client.SpawnMachine(m.ID)
+		}
+		if err != nil {
+			notifyErr("Spawn failed", "HTB server error, please try again shortly. ("+truncate(err.Error(), 80)+")")
+			return
+		}
 	}
 	notify("Spawning", m.Name+" is starting (~1-2 min)")
 	go func() {

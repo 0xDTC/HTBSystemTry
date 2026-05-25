@@ -208,6 +208,30 @@ func (t *TrayApp) sherlockDownload(s api.Sherlock) {
 		saved = append(saved, "info.txt")
 	}
 
+	// 4) question.md (tasks / questions) - best-effort
+	if tasks, err := t.client.SherlockTasks(s.ID); err == nil && len(tasks) > 0 {
+		var b strings.Builder
+		fmt.Fprintf(&b, "# %s - Tasks\n\n", s.Name)
+		for i, task := range tasks {
+			title := strings.TrimSpace(task.Title)
+			if title == "" {
+				title = fmt.Sprintf("Task %d", i+1)
+			}
+			fmt.Fprintf(&b, "## Task %d: %s", i+1, title)
+			if task.Completed {
+				b.WriteString(" (completed)")
+			}
+			b.WriteString("\n")
+			if task.Description != "" {
+				fmt.Fprintf(&b, "%s\n", task.Description)
+			}
+			b.WriteString("\n")
+		}
+		if os.WriteFile(filepath.Join(dir, "question.md"), []byte(b.String()), 0644) == nil {
+			saved = append(saved, "question.md")
+		}
+	}
+
 	if len(saved) == 0 {
 		notifyErr("Sherlock", "Nothing could be downloaded for "+s.Name)
 		return

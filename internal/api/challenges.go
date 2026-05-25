@@ -194,14 +194,58 @@ func (c *Client) SubmitChallengeFlag(id int, flag string) (*FlagResponse, error)
 	return &out, nil
 }
 
-// StartChallenge starts the challenge's docker container.
+// StartChallenge starts the challenge's docker container and returns a
+// human-readable connection string. The documented response is just
+// {"id","message"} (for example "Instance Created!"), but some challenge
+// containers also report their docker endpoint, so we decode flexibly and
+// prefer an "ip:port" string when host/port fields are present, falling back
+// to the response message. A 2xx with nothing useful returns ("", nil).
 //
 // POST v4 /challenge/start  body: {"challenge_id"}
-func (c *Client) StartChallenge(id int) error {
+func (c *Client) StartChallenge(id int) (string, error) {
 	body := struct {
 		ChallengeID int `json:"challenge_id"`
 	}{ChallengeID: id}
-	return c.sendJSON(http.MethodPost, "v4", "/challenge/start", body, nil)
+
+	// Flexible shape: HTB has used several field names across versions for the
+	// container endpoint, so accept any that show up.
+	var out struct {
+		Message     string `json:"message"`
+		IP          string `json:"ip"`
+		Host        string `json:"host"`
+		DockerIP    string `json:"docker_ip"`
+		Port        int    `json:"port"`
+		Ports       []int  `json:"ports"`
+		DockerPorts []int  `json:"docker_ports"`
+	}
+	if err := c.sendJSON(http.MethodPost, "v4", "/challenge/start", body, &out); err != nil {
+		return "", err
+	}
+
+	host := out.IP
+	if host == "" {
+		host = out.Host
+	}
+	if host == "" {
+		host = out.DockerIP
+	}
+
+	port := out.Port
+	if port == 0 && len(out.Ports) > 0 {
+		port = out.Ports[0]
+	}
+	if port == 0 && len(out.DockerPorts) > 0 {
+		port = out.DockerPorts[0]
+	}
+
+	switch {
+	case host != "" && port != 0:
+		return fmt.Sprintf("%s:%d", host, port), nil
+	case host != "":
+		return host, nil
+	default:
+		return strings.TrimSpace(out.Message), nil
+	}
 }
 
 // StopChallenge stops the challenge's docker container.

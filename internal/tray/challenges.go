@@ -12,9 +12,12 @@ import (
 )
 
 type challengeRow struct {
-	parent *systray.MenuItem
-	info   *systray.MenuItem
-	submit *systray.MenuItem
+	parent  *systray.MenuItem
+	info    *systray.MenuItem
+	submit  *systray.MenuItem
+	start   *systray.MenuItem
+	stop    *systray.MenuItem
+	restart *systray.MenuItem
 
 	mu sync.Mutex
 	c  api.Challenge
@@ -64,6 +67,9 @@ func (t *TrayApp) newChallengeRows(parent *systray.MenuItem, n int) []*challenge
 		r.parent = parent.AddSubMenuItem("", "")
 		r.info = r.parent.AddSubMenuItem("ℹ️ Info", "")
 		r.submit = r.parent.AddSubMenuItem("🚩 Submit Flag (clipboard)", "")
+		r.start = r.parent.AddSubMenuItem("▶️ Start", "")
+		r.stop = r.parent.AddSubMenuItem("⏹️ Stop", "")
+		r.restart = r.parent.AddSubMenuItem("🔄 Restart", "")
 		r.parent.Hide()
 		rows[i] = r
 		go t.runChallengeRow(r)
@@ -78,6 +84,12 @@ func (t *TrayApp) runChallengeRow(r *challengeRow) {
 			t.challengeInfo(r.current())
 		case <-r.submit.ClickedCh:
 			t.challengeSubmit(r.current())
+		case <-r.start.ClickedCh:
+			go t.challengeStart(r.current())
+		case <-r.stop.ClickedCh:
+			go t.challengeStop(r.current())
+		case <-r.restart.ClickedCh:
+			go t.challengeRestart(r.current())
 		}
 	}
 }
@@ -113,6 +125,9 @@ func (t *TrayApp) renderChallengeRows(rows []*challengeRow, hdr *systray.MenuIte
 			r.bind(c)
 			r.parent.SetTitle(challengeTitle(c))
 			r.parent.SetTooltip(fmt.Sprintf("%s · %s · %s", c.Name, c.Category, c.Difficulty))
+			r.start.Show()
+			r.stop.Show()
+			r.restart.Show()
 			r.parent.Show()
 		} else {
 			r.parent.Hide()
@@ -163,4 +178,32 @@ func (t *TrayApp) challengeSubmit(c api.Challenge) {
 		time.Sleep(1 * time.Second)
 		t.refreshChallenges()
 	}()
+}
+
+func (t *TrayApp) challengeStart(c api.Challenge) {
+	conn, err := t.client.StartChallenge(c.ID)
+	if err != nil {
+		notifyErr("Start failed", truncate(err.Error(), 120))
+		return
+	}
+	if conn != "" {
+		clipboardWrite(conn)
+		notify("▶️ Started "+c.Name, conn+"\n(copied to clipboard)")
+		return
+	}
+	notify("▶️ Started", "Started "+c.Name)
+}
+
+func (t *TrayApp) challengeStop(c api.Challenge) {
+	if err := t.client.StopChallenge(c.ID); err != nil {
+		notifyErr("Stop failed", truncate(err.Error(), 120))
+		return
+	}
+	notify("⏹️ Stopped", "Stopped "+c.Name)
+}
+
+func (t *TrayApp) challengeRestart(c api.Challenge) {
+	// Ignore a stop error: the container may not be running yet.
+	_ = t.client.StopChallenge(c.ID)
+	t.challengeStart(c)
 }
