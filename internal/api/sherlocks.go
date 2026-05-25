@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 )
@@ -153,26 +152,6 @@ func (c *Client) SherlockTasks(id int) ([]SherlockTask, error) {
 		return nil, err
 	}
 	return resp.Data, nil
-}
-
-// SubmitSherlockFlag submits a flag for a single task of a Sherlock.
-//
-// The endpoint returns 201 with a message on success and 400 on an incorrect
-// flag; there is no boolean "success" field in the body, so Success is derived
-// from a successful (2xx) response.
-func (c *Client) SubmitSherlockFlag(sherlockID, taskID int, flag string) (*FlagResponse, error) {
-	body := struct {
-		Flag string `json:"flag"`
-	}{Flag: flag}
-
-	var resp struct {
-		Message string `json:"message"`
-	}
-	path := fmt.Sprintf("/sherlocks/%d/tasks/%d/flag", sherlockID, taskID)
-	if err := c.sendJSON(http.MethodPost, "v4", path, body, &resp); err != nil {
-		return nil, err
-	}
-	return &FlagResponse{Success: true, Message: resp.Message}, nil
 }
 
 // SherlockDownloadLink returns a temporary URL for downloading the Sherlock's

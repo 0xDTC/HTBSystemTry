@@ -54,9 +54,6 @@ func NewClient(token string) *Client {
 	}
 }
 
-// Token returns the raw API token (used, for example, to parse the JWT subject).
-func (c *Client) Token() string { return c.token }
-
 // APIError is returned for any non-2xx response from the HTB API.
 type APIError struct {
 	Status int

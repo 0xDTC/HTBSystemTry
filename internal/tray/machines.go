@@ -212,7 +212,9 @@ func (t *TrayApp) machineSpawn(m api.Machine) {
 			err = t.client.SpawnMachine(m.ID)
 		}
 		if err != nil {
-			notifyErr("Spawn failed", "HTB server error, please try again shortly. ("+truncate(err.Error(), 80)+")")
+			// The usual cause is no Machines VPN server selected; HTB then cannot
+			// place the machine ("Failed to spawn on the Dedicated server").
+			notifyErr("Spawn failed", "Pick a Machines VPN server first (VPN menu, then 'Switch to this server'), then retry. ("+truncate(err.Error(), 70)+")")
 			return
 		}
 	}

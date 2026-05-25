@@ -1,18 +1,16 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 )
 
 // Machine is a unified view of an HTB machine. It is populated from several
-// different HTB endpoints (the v5 paginated /machines list, the v4
-// /machine/profile/{id} detail, and the v4 /machine/active endpoint), each of
-// which uses slightly different JSON field names. The json tags below describe
-// this struct's own stable shape so callers get a consistent contract no matter
-// which endpoint produced the value.
+// different HTB endpoints (the v5 paginated /machines list and the v4
+// /machine/active endpoint), each of which uses slightly different JSON field
+// names. The json tags below describe this struct's own stable shape so callers
+// get a consistent contract no matter which endpoint produced the value.
 type Machine struct {
 	ID         int     `json:"id"`
 	Name       string  `json:"name"`
@@ -29,7 +27,7 @@ type Machine struct {
 	ReleaseDate string `json:"release_date"`
 
 	// Spawn/instance state. Populated when the source endpoint reports play
-	// info (v5 list playInfo, v4 profile playInfo, or v4 /machine/active).
+	// info (v5 list playInfo or v4 /machine/active).
 	Spawned   bool   `json:"spawned"`
 	Spawning  bool   `json:"spawning"`
 	IsActive  bool   `json:"is_active"`  // instance currently active/online
@@ -150,72 +148,6 @@ func (c *Client) ListRetiredMachines() ([]Machine, error) {
 	return c.listMachines("retired")
 }
 
-// GetMachine fetches a single machine's profile from v4
-// /machine/profile/{machineSlug}. The slug accepts a numeric id.
-func (c *Client) GetMachine(id int) (*Machine, error) {
-	var resp struct {
-		Info struct {
-			ID                 int     `json:"id"`
-			Name               string  `json:"name"`
-			OS                 string  `json:"os"`
-			Points             int     `json:"points"`
-			Stars              float64 `json:"stars"`
-			DifficultyText     string  `json:"difficultyText"`
-			Release            string  `json:"release"`
-			Active             *bool   `json:"active"`
-			Retired            *bool   `json:"retired"`
-			IP                 *string `json:"ip"`
-			AuthUserInUserOwns bool    `json:"authUserInUserOwns"`
-			AuthUserInRootOwns bool    `json:"authUserInRootOwns"`
-			PlayInfo           struct {
-				IsSpawned  *bool   `json:"isSpawned"`
-				IsSpawning *bool   `json:"isSpawning"`
-				IsActive   *bool   `json:"isActive"`
-				ExpiresAt  *string `json:"expires_at"`
-			} `json:"playInfo"`
-		} `json:"info"`
-	}
-	path := fmt.Sprintf("/machine/profile/%d", id)
-	if err := c.getJSON("v4", path, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	info := resp.Info
-	m := &Machine{
-		ID:          info.ID,
-		Name:        info.Name,
-		OS:          info.OS,
-		Difficulty:  info.DifficultyText,
-		Stars:       info.Stars,
-		Points:      info.Points,
-		UserOwns:    info.AuthUserInUserOwns,
-		RootOwns:    info.AuthUserInRootOwns,
-		ReleaseDate: info.Release,
-	}
-	if info.Active != nil {
-		m.Active = *info.Active
-	}
-	if info.Retired != nil {
-		m.Retired = *info.Retired
-	}
-	if info.IP != nil {
-		m.IP = *info.IP
-	}
-	if info.PlayInfo.IsSpawned != nil {
-		m.Spawned = *info.PlayInfo.IsSpawned
-	}
-	if info.PlayInfo.IsSpawning != nil {
-		m.Spawning = *info.PlayInfo.IsSpawning
-	}
-	if info.PlayInfo.IsActive != nil {
-		m.IsActive = *info.PlayInfo.IsActive
-	}
-	if info.PlayInfo.ExpiresAt != nil {
-		m.ExpiresAt = *info.PlayInfo.ExpiresAt
-	}
-	return m, nil
-}
-
 // ActiveMachine returns the machine currently spawned for the user from v4
 // /machine/active. When nothing is spawned the "info" object is null and this
 // returns (nil, nil).
@@ -269,13 +201,6 @@ func (c *Client) StopMachine(id int) error {
 func (c *Client) ResetMachine(id int) error {
 	body := map[string]int{"machine_id": id}
 	return c.sendJSON(http.MethodPost, "v4", "/vm/reset", body, nil)
-}
-
-// ExtendMachine extends the running time of the given machine via POST
-// v4 /vm/extend.
-func (c *Client) ExtendMachine(id int) error {
-	body := map[string]int{"machine_id": id}
-	return c.sendJSON(http.MethodPost, "v4", "/vm/extend", body, nil)
 }
 
 // SubmitMachineFlag submits a flag for the given machine via POST v5

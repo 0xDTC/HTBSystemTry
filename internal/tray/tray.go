@@ -8,7 +8,6 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"htb-tool/internal/api"
 	"htb-tool/internal/cache"
@@ -23,7 +22,6 @@ const (
 	maxActiveChalls    = 45
 	maxRetiredChalls   = 25
 	maxSherlocks       = 40
-	cacheTTL           = 5 * time.Minute
 )
 
 // TrayApp owns the menu state, API client, and per-dataset caches.
@@ -38,11 +36,12 @@ type TrayApp struct {
 	sherlocksStore  *cache.Store[[]api.Sherlock]
 	vpnStore        *cache.Store[[]api.VPNServer]
 
-	statusItem  *systray.MenuItem
-	searchItem  *systray.MenuItem
-	tokenItem   *systray.MenuItem
-	refreshItem *systray.MenuItem
-	quitItem    *systray.MenuItem
+	statusItem     *systray.MenuItem
+	submitFlagItem *systray.MenuItem
+	searchItem     *systray.MenuItem
+	tokenItem      *systray.MenuItem
+	refreshItem    *systray.MenuItem
+	quitItem       *systray.MenuItem
 
 	machines   *machineSection
 	challenges *challengeSection
@@ -71,12 +70,12 @@ func (t *TrayApp) onReady() {
 	t.config = cfg
 
 	cacheDir := filepath.Join(filepath.Dir(config.GetConfigPath()), "cache")
-	t.machinesActive = cache.New[[]api.Machine](cacheTTL, filepath.Join(cacheDir, "machines_active.json"))
-	t.machinesRetired = cache.New[[]api.Machine](cacheTTL, filepath.Join(cacheDir, "machines_retired.json"))
-	t.challActive = cache.New[[]api.Challenge](cacheTTL, filepath.Join(cacheDir, "challenges_active.json"))
-	t.challRetired = cache.New[[]api.Challenge](cacheTTL, filepath.Join(cacheDir, "challenges_retired.json"))
-	t.vpnStore = cache.New[[]api.VPNServer](cacheTTL, filepath.Join(cacheDir, "vpn.json"))
-	t.sherlocksStore = cache.New[[]api.Sherlock](cacheTTL, filepath.Join(cacheDir, "sherlocks.json"))
+	t.machinesActive = cache.New[[]api.Machine](filepath.Join(cacheDir, "machines_active.json"))
+	t.machinesRetired = cache.New[[]api.Machine](filepath.Join(cacheDir, "machines_retired.json"))
+	t.challActive = cache.New[[]api.Challenge](filepath.Join(cacheDir, "challenges_active.json"))
+	t.challRetired = cache.New[[]api.Challenge](filepath.Join(cacheDir, "challenges_retired.json"))
+	t.vpnStore = cache.New[[]api.VPNServer](filepath.Join(cacheDir, "vpn.json"))
+	t.sherlocksStore = cache.New[[]api.Sherlock](filepath.Join(cacheDir, "sherlocks.json"))
 	t.machinesActive.Load()
 	t.machinesRetired.Load()
 	t.challActive.Load()
@@ -103,6 +102,7 @@ func (t *TrayApp) onReady() {
 // pre-allocated pools of reusable rows that later get updated in place.
 func (t *TrayApp) buildSkeleton() {
 	t.statusItem = systray.AddMenuItem("⏳ Loading…", "HTB - click to copy active machine IP")
+	t.submitFlagItem = systray.AddMenuItem("🚩 Submit Flag (clipboard)", "Submit the clipboard flag to the running machine")
 	systray.AddSeparator()
 
 	t.machines = t.buildMachineSection()
@@ -123,6 +123,8 @@ func (t *TrayApp) handleTopLevel() {
 		select {
 		case <-t.statusItem.ClickedCh:
 			t.onStatusClick()
+		case <-t.submitFlagItem.ClickedCh:
+			t.submitActiveFlag()
 		case <-t.searchItem.ClickedCh:
 			t.onSearch()
 		case <-t.tokenItem.ClickedCh:
@@ -227,6 +229,44 @@ func (t *TrayApp) onStatusClick() {
 		} else {
 			notify("HTB", m.Name+" (no IP yet)")
 		}
+	}()
+}
+
+// submitActiveFlag submits the clipboard flag to the currently running machine,
+// so the active box can be owned from the top of the menu without finding it in
+// the list.
+func (t *TrayApp) submitActiveFlag() {
+	if t.client == nil {
+		notifyErr("HTB", "Set your API token first")
+		return
+	}
+	flag, err := clipboardRead()
+	if err != nil || flag == "" {
+		notifyErr("Submit Flag", "Copy the flag to your clipboard first")
+		return
+	}
+	go func() {
+		m, err := t.client.ActiveMachine()
+		if err != nil {
+			notifyErr("Submit Flag", truncate(err.Error(), 120))
+			return
+		}
+		if m == nil {
+			notifyErr("Submit Flag", "No active machine to submit to")
+			return
+		}
+		notify("Submitting", "Flag for "+m.Name+"…")
+		resp, err := t.client.SubmitMachineFlag(m.ID, flag, 0)
+		if err != nil {
+			notifyErr("❌ Wrong flag / error", truncate(err.Error(), 120))
+			return
+		}
+		if resp != nil && resp.Success {
+			notify("✅ Correct!", m.Name+": "+resp.Message)
+		} else if resp != nil {
+			notifyErr("❌ Incorrect", resp.Message)
+		}
+		t.refreshMachines()
 	}()
 }
 

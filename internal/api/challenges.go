@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,9 +9,8 @@ import (
 )
 
 // Challenge is a normalized view of an HTB challenge, suitable for list and
-// detail rendering. Depending on the source endpoint some fields may be zero:
-// the challenge-list endpoint (ListChallenges) does not return Points or Likes,
-// while the detail endpoint (GetChallenge) populates all fields.
+// detail rendering. The list endpoint (ListChallenges) does not return Points
+// or Likes, so those may be zero.
 type Challenge struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
@@ -128,50 +126,6 @@ func (c *Client) ListChallenges(retired bool) ([]Challenge, error) {
 	return challenges, nil
 }
 
-// GetChallenge returns the full detail for a single challenge by numeric id.
-// The /challenge/info endpoint also accepts a slug, but this method takes an id.
-//
-// GET v4 /challenge/info/{id}
-func (c *Client) GetChallenge(id int) (*Challenge, error) {
-	var out struct {
-		Challenge struct {
-			ID            int         `json:"id"`
-			Name          string      `json:"name"`
-			Difficulty    string      `json:"difficulty"`
-			Category      string      `json:"category_name"`
-			Points        json.Number `json:"points"`
-			Solves        int         `json:"solves"`
-			Likes         int         `json:"likes"`
-			Retired       bool        `json:"retired"`
-			AuthUserSolve bool        `json:"authUserSolve"`
-			ReleaseDate   string      `json:"release_date"`
-		} `json:"challenge"`
-	}
-	if err := c.getJSON("v4", fmt.Sprintf("/challenge/info/%d", id), nil, &out); err != nil {
-		return nil, err
-	}
-	ch := out.Challenge
-	points := 0
-	if ch.Points != "" {
-		// points is oneOf{integer,string} in the schema; tolerate both.
-		if n, err := strconv.Atoi(strings.TrimSpace(ch.Points.String())); err == nil {
-			points = n
-		}
-	}
-	return &Challenge{
-		ID:          ch.ID,
-		Name:        ch.Name,
-		Difficulty:  ch.Difficulty,
-		Category:    ch.Category,
-		Points:      points,
-		Solves:      ch.Solves,
-		Likes:       ch.Likes,
-		Retired:     ch.Retired,
-		Solved:      ch.AuthUserSolve,
-		ReleaseDate: ch.ReleaseDate,
-	}, nil
-}
-
 // SubmitChallengeFlag submits a flag for the given challenge.
 //
 // POST v4 /challenge/own  body: {"challenge_id", "flag"}
@@ -256,18 +210,4 @@ func (c *Client) StopChallenge(id int) error {
 		ChallengeID int `json:"challenge_id"`
 	}{ChallengeID: id}
 	return c.sendJSON(http.MethodPost, "v4", "/challenge/stop", body, nil)
-}
-
-// ChallengeDownloadLink returns a (time-limited) URL to download the challenge
-// files archive.
-//
-// GET v4 /challenges/{id}/download_link
-func (c *Client) ChallengeDownloadLink(id int) (string, error) {
-	var out struct {
-		URL string `json:"url"`
-	}
-	if err := c.getJSON("v4", fmt.Sprintf("/challenges/%d/download_link", id), nil, &out); err != nil {
-		return "", err
-	}
-	return out.URL, nil
 }
